@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1546895406134.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3882180785",
+    "id" : "ACDDB16B",
+    "lastKnownWriteTime" : 1547069148,
+    "last_content_update" : 1547069148696,
+    "path" : "~/Box/Dilsher/Andrew/Flow project/Andrew_Flow/Data_wrangling.R",
+    "project_path" : "Data_wrangling.R",
+    "properties" : {
+        "cursorPosition" : "62,20",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
