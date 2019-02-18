@@ -1,0 +1,117 @@
+---
+title: "NL Plotting"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+*Import Libraries* 
+```{r include=FALSE}
+library(tidyverse)
+library(corrplot)
+```
+*Load the data* 
+```{r,include=FALSE}
+load(file="~/Box/Dilsher/Andrew/Flow_project/Data Files/NL_fc_data.rda")
+load(file="~/Box/Dilsher/Andrew/Flow_project/Data Files/NL_baseline_data.rda")
+load(file="~/Box/Dilsher/Andrew/Flow_project/Data Files/NL_cleaned_data.rda")
+
+```
+
+
+
+
+### Looking at the *upregulation* for all the 4 stimulus's - BCG, HIV, SEB and E/C 
+For all the expression variables, look at the correlation for the 4 stimulus where for each stimulus, the expression is the fold change from the `nil sample`
+
+
+
+```{r,include=FALSE}
+#Create separate fold change data frames 
+
+nested_fc<-fc_data%>%
+  select(-ID)%>%
+  group_by(Stim)%>%
+  nest()%>%
+  filter(Stim=="BCG"|Stim=="HIV"|Stim=="SEB" |Stim=="E/C")
+nested_fc[[1]] # get the names 
+bcg_fc<-nested_fc[[2]][[1]]
+hiv_fc<-nested_fc[[2]][[2]]
+seb_fc<-nested_fc[[2]][[3]]
+ec_fc<-nested_fc[[2]][[4]]
+```
+
+**Create a plotting funtion**
+```{r,include=FALSE}
+dd_correlation_plots<-function(df){
+  ## The data frame df should be a numeric df with the variables listed and the rows are simply the rownames ##
+  c<-cor(df,use="pairwise.complete.obs",method = "spearman")
+  p<-cor.mtest(df,method="spearman",continuity=TRUE)[[1]]
+  p_adj<-p.adjust(p,method = "BH") ### BH correction multiple testing 
+  p_adj_mat<-matrix(p_adj,nrow = ncol(df),ncol=ncol(df)) ## convert into matrix 
+  rownames(p_adj_mat)<-rownames(c) ## 
+  colnames(p_adj_mat)<-colnames(c)
+  ## clustering
+  #dd<-as.dist((1-abs(c)))
+  
+  #dir<-getwd()
+  #dir.create(getwd)
+  col1 <- colorRampPalette(c("#7F0000", "red", "#FF7F00", "green", "white",
+                             "cyan", "#007FFF", "blue", "#00007F"))
+  #dir<-"/Users/dilsherdhillon/Box/Dilsher/Andrew/Flow project/Andrew_Flow/Outputs/CD4_Flow"
+  #dir.create(dir)
+  #pdf(file.path(dir,paste0(deparse(substitute(df)),".pdf")))
+  #par(mfrow=c(2,2))
+  corrplot(c, type = "upper",method="number",col=col1(20),title=paste0(toupper(deparse(substitute(df))),"   Stimulus Spearman Correlation"),mar=c(0,0,1,0),number.cex = .7)
+  
+  corrplot(p_adj_mat,type="upper",method="number",cl.lim = c(0, 1),col=col1(20),title=paste0(toupper(deparse(substitute(df))),"   BH Adjusted p-values"),mar=c(0,0,1,0),number.cex = .7)
+  #plot(hclust(dd,method = "ward.D"),main="Heirarchial Clustering")
+  #title(paste0(toupper(deparse(substitute(df)))," Stimulus Correlation"), line = -21, outer = TRUE)
+  #graphics.off()
+  rm(c,p,p_adj,p_adj_mat,dd,col1)
+}
+```
+
+
+
+**Correlation plots for upregulation** 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+dd_correlation_plots(bcg_fc)
+dd_correlation_plots(hiv_fc)
+dd_correlation_plots(seb_fc)
+dd_correlation_plots(ec_fc)
+```
+
+
+\pagebreak
+
+
+### Looking at only the *baseline* expression 
+For all the expression variables, look at the correlation for the 4 stimulus where for each stimulus, the expression is the baseline expression.
+
+```{r include=FALSE}
+nested_baseline<-baseline_data%>%
+  select(-ID)%>%
+  group_by(Stim)%>%
+  nest()%>%
+  filter(Stim=="BCG"|Stim=="HIV"|Stim=="SEB" |Stim=="E/C")
+nested_baseline[[1]] # get the names 
+bcg_baseline<-nested_baseline[[2]][[1]]
+hiv_baseline<-nested_baseline[[2]][[2]]
+seb_baseline<-nested_baseline[[2]][[3]]
+ec_baseline<-nested_baseline[[2]][[4]]
+
+```
+
+
+**Correlation plots for baseline** 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+dd_correlation_plots(bcg_baseline)
+dd_correlation_plots(hiv_baseline)
+dd_correlation_plots(seb_baseline)
+dd_correlation_plots(ec_baseline)
+```
+
+
+

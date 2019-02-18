@@ -1,0 +1,98 @@
+---
+title: "NL Data cleaning"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+Read in data
+
+
+```{r}
+NL_master <- read_csv("~/Box/Dilsher/Andrew/Flow_project/Data Files/NL_master.csv")
+dta<-NL_master
+```
+
+##### Cleaning steps 
+1. Add '_' to all empty spaces in variable names 
+2. Remove the % sign from the expression variables and convert to numeric
+3. Keep only those samples that were run on baseline.
+4. Remove ARD and AD samples - **Tomo, what are these?**
+
+
+**1, 2 and 3**
+```{r}
+tidy.name.vector <- make.names(names(dta), unique=TRUE)
+names(dta)<-tidy.name.vector
+
+
+
+dta<-dta%>%
+  mutate(visit=sapply(str_split(dta$Patient.visit.ID,"-"),"[",2))%>%
+  filter(visit=="1" |is.na(visit))%>% ## either baseline which is 1 or NA, which indicates baseline 
+  mutate_all(funs(gsub("%","",.)))%>%
+  mutate_at(.,vars(CD107a:TNF),funs(as.numeric))%>%
+  mutate(ID=gsub( "_.*$", "",ID_stim)) %>%   # Create a sample ID because Tomo made a typo in his ID variable 
+  filter(ID!="ARD")%>%
+  filter(ID!="ArD")%>%
+  filter(ID!="AD")
+  
+```
+
+```{r}
+dta%>%
+  count(Stim)
+
+```
+
+#### Data processing 
+We need to calculate the fold change and/or the baseline(nil), values according to the below - from Andrew's email on January 25, 2019
+
+IL-13: both upregulation and baseline (I suspect upreg will be better)
+IFNg: upregulation
+PD1: baseline
+IL4: both baseline and upregulation (I suspect baseline will be more informative)
+TNF: upregulation
+Tbet: both baseline and upregulation
+Ki67: both
+Perforin: both
+IL1-: upregulation
+CD107a: upregulation
+GATA3: both
+CD107a: upregulation
+
+
+**Calculate the Fold change for all as compared to baseline**
+```{r}
+dta<- dta%>%
+    mutate(nil=ifelse(grepl("nil",Stim,ignore.case = TRUE),"Yes","No"))%>%
+     group_by(ID)%>%
+        arrange(desc(nil),.by_group=TRUE)%>%
+          mutate_at(.funs = funs(fc=./.[1]),vars(CD107a:TNF))%>%
+            ungroup()
+```
+
+**Create a fold change dataframe and a baseline dataframe**
+```{r}
+fc_data<-dta%>%
+  select(c(ID,Stim,contains("fc")))
+
+baseline_data<-dta%>%
+  select(c(ID,Stim,CD107a:TNF))
+```
+
+```{r}
+save(fc_data,file="~/Box/Dilsher/Andrew/Flow_project/Data Files/NL_fc_data.rda")
+save(baseline_data,file="~/Box/Dilsher/Andrew/Flow_project/Data Files/NL_baseline_data.rda")
+save(dta,file="~/Box/Dilsher/Andrew/Flow_project/Data Files/NL_cleaned_data.rda")
+
+
+```
+
+
+
+
+
+
